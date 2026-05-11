@@ -27,12 +27,21 @@ public class InfixToPostfixConverter {
         return 0;
     }
 
+    private static boolean isOperator(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
+    }
+
     private static List<Character> snapshotTopToBottom(Stack<Character> stk) {
         List<Character> snap = new ArrayList<>();
         for (int i = stk.size() - 1; i >= 0; i--) { // top -> bottom
             snap.add(stk.get(i));
         }
         return snap;
+    }
+
+    private static void appendToken(StringBuilder out, String token) {
+        if (out.length() > 0) out.append(' ');
+        out.append(token);
     }
 
     public static List<Step> convertWithSteps(String exp) {
@@ -46,18 +55,36 @@ public class InfixToPostfixConverter {
             char ch = exp.charAt(i);
             if (ch == ' ') continue;
 
-            if (Character.isDigit(ch) || Character.isLetter(ch)) {
-                output.append(ch);
+            // Parse multi-digit number
+            if (Character.isDigit(ch)) {
+                int j = i;
+                while (j < exp.length() && Character.isDigit(exp.charAt(j))) j++;
+                String number = exp.substring(i, j);
+
+                appendToken(output, number);
+                steps.add(new Step(i, ch, "Number " + number + " → append to output",
+                        snapshotTopToBottom(stk), output.toString()));
+
+                i = j - 1; // advance
+                continue;
+            }
+
+            // Single-letter variable (kept as token)
+            if (Character.isLetter(ch)) {
+                appendToken(output, String.valueOf(ch));
                 steps.add(new Step(i, ch, "Operand → append to output",
                         snapshotTopToBottom(stk), output.toString()));
-            } else if (ch == '(') {
+                continue;
+            }
+
+            if (ch == '(') {
                 stk.push(ch);
                 steps.add(new Step(i, ch, "Push '('",
                         snapshotTopToBottom(stk), output.toString()));
             } else if (ch == ')') {
                 while (!stk.isEmpty() && stk.peek() != '(') {
                     char popped = stk.pop();
-                    output.append(popped);
+                    appendToken(output, String.valueOf(popped));
                     steps.add(new Step(i, ch, "Pop '" + popped + "' → output (until '(')",
                             snapshotTopToBottom(stk), output.toString()));
                 }
@@ -66,24 +93,25 @@ public class InfixToPostfixConverter {
                 stk.pop(); // remove '('
                 steps.add(new Step(i, ch, "Pop '(' and discard",
                         snapshotTopToBottom(stk), output.toString()));
-            } else {
-                // operator
+            } else if (isOperator(ch)) {
                 while (!stk.isEmpty() && stk.peek() != '(' && priority(ch) <= priority(stk.peek())) {
                     char popped = stk.pop();
-                    output.append(popped);
+                    appendToken(output, String.valueOf(popped));
                     steps.add(new Step(i, ch, "Pop '" + popped + "' → output (priority)",
                             snapshotTopToBottom(stk), output.toString()));
                 }
                 stk.push(ch);
                 steps.add(new Step(i, ch, "Push operator '" + ch + "'",
                         snapshotTopToBottom(stk), output.toString()));
+            } else {
+                throw new IllegalArgumentException("Unsupported character: '" + ch + "'");
             }
         }
 
         while (!stk.isEmpty()) {
             char top = stk.pop();
             if (top == '(') throw new IllegalArgumentException("Mismatched parentheses: missing ')'");
-            output.append(top);
+            appendToken(output, String.valueOf(top));
             steps.add(new Step(exp.length(), '\0', "End: pop '" + top + "' → output (drain)",
                     snapshotTopToBottom(stk), output.toString()));
         }
