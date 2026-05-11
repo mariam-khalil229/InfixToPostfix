@@ -10,18 +10,23 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
 
 public class InfixToPostfixApp extends Application {
 
-    // --- Data structures ---
+    // ---------- DATA ----------
     static class Step {
         final int index;
         final char ch;
         final List<Character> stackTopToBottom;
         final String output;
         Step(int index, char ch, List<Character> stackTopToBottom, String output) {
-            this.index = index; this.ch = ch; this.stackTopToBottom = stackTopToBottom; this.output = output;
+            this.index = index;
+            this.ch = ch;
+            this.stackTopToBottom = stackTopToBottom;
+            this.output = output;
         }
     }
 
@@ -30,11 +35,13 @@ public class InfixToPostfixApp extends Application {
         final String token;
         final List<String> stackTopToBottom;
         EvalStep(int index, String token, List<String> stackTopToBottom) {
-            this.index = index; this.token = token; this.stackTopToBottom = stackTopToBottom;
+            this.index = index;
+            this.token = token;
+            this.stackTopToBottom = stackTopToBottom;
         }
     }
 
-    // --- Converter ---
+    // ---------- CONVERTER ----------
     static class InfixToPostfixConverter {
         static int priority(char c) { return (c=='+'||c=='-')?1:(c=='*'||c=='/')?2:(c=='^')?3:0; }
         static boolean isOp(char c){ return "+-*/^".indexOf(c)>=0; }
@@ -63,8 +70,7 @@ public class InfixToPostfixApp extends Application {
                 if (Character.isDigit(ch)){
                     int j=i;
                     while (j<exp.length() && Character.isDigit(exp.charAt(j))) j++;
-                    String num = exp.substring(i,j);
-                    appendTok(out, num);
+                    appendTok(out, exp.substring(i,j));
                     steps.add(new Step(i, ch, snap(stk), out.toString()));
                     i=j-1;
                     continue;
@@ -108,11 +114,11 @@ public class InfixToPostfixApp extends Application {
         }
     }
 
-    // --- Evaluators ---
+    // ---------- EVALUATOR ----------
     static class PostfixEvaluatorWithSteps {
-        static List<String> snap(Deque<Double> s){
+        static List<String> snap(Stack<Double> s){
             List<String> out = new ArrayList<>();
-            for (Double v : s) out.add(format(v));
+            for (int i=s.size()-1;i>=0;i--) out.add(format(s.get(i)));
             return out;
         }
         static String format(double v){ return (v==Math.rint(v))?String.valueOf((long)v):String.valueOf(v); }
@@ -120,8 +126,9 @@ public class InfixToPostfixApp extends Application {
         static List<EvalStep> evaluateWithSteps(String postfix){
             if (postfix==null || postfix.trim().isEmpty())
                 throw new IllegalArgumentException("Postfix expression is empty.");
+
             String[] tokens = postfix.trim().split("\\s+");
-            Deque<Double> stack = new ArrayDeque<>();
+            Stack<Double> stack = new Stack<>();
             List<EvalStep> steps = new ArrayList<>();
 
             for (int i=0;i<tokens.length;i++){
@@ -157,18 +164,23 @@ public class InfixToPostfixApp extends Application {
             steps.add(new EvalStep(tokens.length, "(done)", snap(stack)));
             return steps;
         }
-    }
 
-    static class PostfixEvaluator {
         static double evaluate(String postfix){
             if (postfix==null || postfix.trim().isEmpty())
                 throw new IllegalArgumentException("Postfix expression is empty.");
-            Deque<Double> stack = new ArrayDeque<>();
+
+            Stack<Double> stack = new Stack<>();
             for (String t : postfix.trim().split("\\s+")){
                 if (t.isEmpty()) continue;
-                if (t.matches("[-+]?\\d+(\\.\\d+)?")) { stack.push(Double.parseDouble(t)); continue; }
+
+                if (t.matches("[-+]?\\d+(\\.\\d+)?")) {
+                    stack.push(Double.parseDouble(t));
+                    continue;
+                }
+
                 if (t.matches("[A-Za-z]"))
                     throw new IllegalArgumentException("Cannot evaluate variables like '" + t + "'. Use numbers only.");
+
                 if (stack.size()<2)
                     throw new IllegalArgumentException("Invalid postfix: not enough operands for operator '" + t + "'.");
 
@@ -183,12 +195,13 @@ public class InfixToPostfixApp extends Application {
                 };
                 stack.push(r);
             }
+
             if (stack.size()!=1) throw new IllegalArgumentException("Invalid postfix: leftover operands/operators.");
             return stack.pop();
         }
     }
 
-    // --- UI State ---
+    // ---------- UI STATE ----------
     private int stepIndex = 0, evalStepIndex = 0;
     private List<Step> steps;
     private List<EvalStep> evalSteps;
@@ -207,18 +220,13 @@ public class InfixToPostfixApp extends Application {
         Button nextBtn = new Button("Next");
         prevBtn.setDisable(true); nextBtn.setDisable(true);
 
-        charLabel = new Label("Current char: ");
-        charLabel.setFont(Font.font(16));
-        outputLabel = new Label("Postfix output: ");
-        outputLabel.setFont(Font.font(16));
+        charLabel = new Label("Current char: "); charLabel.setFont(Font.font(16));
+        outputLabel = new Label("Postfix output: "); outputLabel.setFont(Font.font(16));
 
-        evalLabel = new Label("Eval: ");
-        evalLabel.setFont(Font.font(16));
-        resultLabel = new Label("Evaluation: ");
-        resultLabel.setFont(Font.font(16));
+        evalLabel = new Label("Eval: "); evalLabel.setFont(Font.font(16));
+        resultLabel = new Label("Evaluation: "); resultLabel.setFont(Font.font(16));
 
-        Label errorLabel = new Label();
-        errorLabel.setTextFill(Color.DARKRED);
+        Label errorLabel = new Label(); errorLabel.setTextFill(Color.DARKRED);
 
         stackBoxes = new VBox(6); stackBoxes.setPadding(new Insets(10)); stackBoxes.setAlignment(Pos.TOP_CENTER);
         evalStackBoxes = new VBox(6); evalStackBoxes.setPadding(new Insets(10)); evalStackBoxes.setAlignment(Pos.TOP_CENTER);
@@ -242,12 +250,14 @@ public class InfixToPostfixApp extends Application {
             EvalStep s = evalSteps.get(evalStepIndex);
             evalLabel.setText("Eval: " + s.token);
             drawStringStack(evalStackBoxes, s.stackTopToBottom);
+
             if (evalStepIndex==evalSteps.size()-1) {
-                double value = PostfixEvaluator.evaluate(steps.get(steps.size()-1).output);
-                resultLabel.setText("Evaluation: " + value);
+                String postfix = steps.get(steps.size()-1).output;
+                resultLabel.setText("Evaluation: " + PostfixEvaluatorWithSteps.evaluate(postfix));
             } else {
                 resultLabel.setText("Evaluation: ");
             }
+
             prevBtn.setDisable(evalStepIndex==0);
             nextBtn.setDisable(evalStepIndex>=evalSteps.size()-1);
         };
@@ -291,7 +301,6 @@ public class InfixToPostfixApp extends Application {
                     String postfix = steps.get(steps.size()-1).output;
                     evalSteps = PostfixEvaluatorWithSteps.evaluateWithSteps(postfix);
                     evalStepIndex = 0; evalMode = true;
-                    resultLabel.setText("Evaluation: ");
                     renderEval.run();
                 }
             } else {
