@@ -43,12 +43,36 @@ public class InfixToPostfixApp extends Application {
 
     // ---------- CONVERTER ----------
     static class InfixToPostfixConverter {
-        static int priority(char c) { return (c=='+'||c=='-')?1:(c=='*'||c=='/')?2:(c=='^')?3:0; }
-        static boolean isOp(char c){ return "+-*/^".indexOf(c)>=0; }
+
+        static boolean isOp(char c) {
+            switch (c) {
+                case '+':
+                case '-':
+                case '*':
+                case '/':
+                case '^':
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        static int priority(char c) {
+            return (c=='+'||c=='-')?1:(c=='*'||c=='/')?2:(c=='^')?3:0;
+        }
 
         static List<Character> snap(Stack<Character> s){
             List<Character> out = new ArrayList<>();
-            for (int i=s.size()-1;i>=0;i--) out.add(s.get(i));
+            Stack<Character> temp = new Stack<>();
+
+            while (!s.isEmpty()) {
+                char v = s.pop();
+                out.add(v);     // top to bottom
+                temp.push(v);
+            }
+            while (!temp.isEmpty()) {
+                s.push(temp.pop()); // restore original stack
+            }
             return out;
         }
 
@@ -114,9 +138,19 @@ public class InfixToPostfixApp extends Application {
     static class PostfixEvaluatorWithSteps {
         static List<String> snap(Stack<Double> s){
             List<String> out = new ArrayList<>();
-            for (int i=s.size()-1;i>=0;i--) out.add(format(s.get(i)));
+            Stack<Double> temp = new Stack<>();
+
+            while (!s.isEmpty()) {
+                double v = s.pop();
+                out.add(format(v)); // top to bottom
+                temp.push(v);
+            }
+            while (!temp.isEmpty()) {
+                s.push(temp.pop()); // restore
+            }
             return out;
         }
+
         static String format(double v){ return (v==Math.rint(v))?String.valueOf((long)v):String.valueOf(v); }
 
         static List<EvalStep> evaluateWithSteps(String postfix){
