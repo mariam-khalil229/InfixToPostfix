@@ -21,6 +21,7 @@ public class InfixToPostfixApp extends Application {
     private Label charLabel;
     private Label actionLabel;
     private Label outputLabel;
+    private Label resultLabel;
 
     // This VBox will contain stack "boxes"
     private VBox stackBoxes;
@@ -42,6 +43,8 @@ public class InfixToPostfixApp extends Application {
         actionLabel = new Label("Action: ");
         outputLabel = new Label("Postfix output: ");
         outputLabel.setFont(Font.font(16));
+        resultLabel = new Label("Evaluation result: ");
+        resultLabel.setFont(Font.font(16));
 
         Label errorLabel = new Label();
         errorLabel.setTextFill(Color.DARKRED);
@@ -96,6 +99,9 @@ public class InfixToPostfixApp extends Application {
             try {
                 steps = InfixToPostfixConverter.convertWithSteps(input.getText());
                 stepIndex = 0;
+                String postfix = steps.get(steps.size() - 1).output;
+                double result = InfixToPostfixConverter.evaluatePostfix(postfix);
+                resultLabel.setText("Evaluation result: " + formatNumber(result));
                 errorLabel.setText("");
                 render.run();
                 prevBtn.setDisable(false);
@@ -107,6 +113,7 @@ public class InfixToPostfixApp extends Application {
                 charLabel.setText("Current char: ");
                 actionLabel.setText("Action: ");
                 outputLabel.setText("Postfix output: ");
+                resultLabel.setText("Evaluation result: ");
                 errorLabel.setText(ex.getMessage());
                 prevBtn.setDisable(true);
                 nextBtn.setDisable(true);
@@ -135,6 +142,7 @@ public class InfixToPostfixApp extends Application {
                 charLabel,
                 actionLabel,
                 outputLabel,
+                resultLabel,
                 errorLabel
         );
         left.setPadding(new Insets(12));
@@ -188,5 +196,12 @@ public class InfixToPostfixApp extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    private String formatNumber(double value) {
+        if (value == Math.rint(value)) {
+            return String.valueOf((long) value);
+        }
+        return String.valueOf(value);
     }
 }

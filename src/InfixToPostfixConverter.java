@@ -27,6 +27,26 @@ public class InfixToPostfixConverter {
         return 0;
     }
 
+    private static boolean isOperator(char c) {
+        return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
+    }
+
+    private static double applyOperator(char operator, double left, double right) {
+        return switch (operator) {
+            case '+' -> left + right;
+            case '-' -> left - right;
+            case '*' -> left * right;
+            case '/' -> {
+                if (right == 0.0) {
+                    throw new IllegalArgumentException("Division by zero");
+                }
+                yield left / right;
+            }
+            case '^' -> Math.pow(left, right);
+            default -> throw new IllegalArgumentException("Unknown operator: " + operator);
+        };
+    }
+
     private static List<Character> snapshotTopToBottom(Stack<Character> stk) {
         List<Character> snap = new ArrayList<>();
         for (int i = stk.size() - 1; i >= 0; i--) { // top -> bottom
@@ -92,5 +112,54 @@ public class InfixToPostfixConverter {
                 snapshotTopToBottom(stk), output.toString()));
 
         return steps;
+    }
+
+    public static double evaluatePostfix(String postfix) {
+        if (postfix == null) throw new IllegalArgumentException("Postfix expression is null");
+
+        String trimmed = postfix.trim();
+        if (trimmed.isEmpty()) throw new IllegalArgumentException("Postfix expression is empty");
+
+        Stack<Double> values = new Stack<>();
+        boolean whitespaceSeparated = trimmed.contains(" ");
+
+        if (whitespaceSeparated) {
+            String[] tokens = trimmed.split("\\s+");
+            for (String token : tokens) {
+                if (token.length() == 1 && isOperator(token.charAt(0))) {
+                    if (values.size() < 2) throw new IllegalArgumentException("Invalid postfix expression: not enough operands");
+                    double right = values.pop();
+                    double left = values.pop();
+                    values.push(applyOperator(token.charAt(0), left, right));
+                } else {
+                    try {
+                        values.push(Double.parseDouble(token));
+                    } catch (NumberFormatException ex) {
+                        throw new IllegalArgumentException("Invalid token in postfix expression: " + token);
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; i < trimmed.length(); i++) {
+                char ch = trimmed.charAt(i);
+                if (ch == ' ') continue;
+
+                if (Character.isDigit(ch)) {
+                    values.push((double) (ch - '0'));
+                } else if (isOperator(ch)) {
+                    if (values.size() < 2) throw new IllegalArgumentException("Invalid postfix expression: not enough operands");
+                    double right = values.pop();
+                    double left = values.pop();
+                    values.push(applyOperator(ch, left, right));
+                } else {
+                    throw new IllegalArgumentException("Invalid token in postfix expression: " + ch);
+                }
+            }
+        }
+
+        if (values.size() != 1) {
+            throw new IllegalArgumentException("Invalid postfix expression: leftover operands/operators");
+        }
+        return values.pop();
     }
 }
