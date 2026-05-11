@@ -76,12 +76,6 @@ public class InfixToPostfixApp extends Application {
                     continue;
                 }
 
-                if (Character.isLetter(ch)){
-                    appendTok(out, String.valueOf(ch));
-                    steps.add(new Step(i, ch, snap(stk), out.toString()));
-                    continue;
-                }
-
                 if (ch=='('){ stk.push(ch); steps.add(new Step(i,ch,snap(stk),out.toString())); }
                 else if (ch==')'){
                     while (!stk.isEmpty() && stk.peek()!='('){
@@ -99,7 +93,9 @@ public class InfixToPostfixApp extends Application {
                     stk.push(ch);
                     steps.add(new Step(i, ch, snap(stk), out.toString()));
                 } else {
-                    throw new IllegalArgumentException("Unsupported character: '" + ch + "'");
+                    throw new IllegalArgumentException(
+                            "Only numbers, operators (+-*/^), spaces, and parentheses are allowed. Found: '" + ch + "'"
+                    );
                 }
             }
 
@@ -139,8 +135,6 @@ public class InfixToPostfixApp extends Application {
                     steps.add(new EvalStep(i, t, snap(stack)));
                     continue;
                 }
-                if (t.matches("[A-Za-z]"))
-                    throw new IllegalArgumentException("Cannot evaluate variables like '" + t + "'. Use numbers only.");
 
                 if (stack.size()<2)
                     throw new IllegalArgumentException("Invalid postfix: not enough operands for operator '" + t + "'.");
@@ -177,9 +171,6 @@ public class InfixToPostfixApp extends Application {
                     stack.push(Double.parseDouble(t));
                     continue;
                 }
-
-                if (t.matches("[A-Za-z]"))
-                    throw new IllegalArgumentException("Cannot evaluate variables like '" + t + "'. Use numbers only.");
 
                 if (stack.size()<2)
                     throw new IllegalArgumentException("Invalid postfix: not enough operands for operator '" + t + "'.");
