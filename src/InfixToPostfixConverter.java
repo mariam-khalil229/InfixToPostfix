@@ -3,6 +3,7 @@ import java.util.List;
 import java.util.Stack;
 
 public class InfixToPostfixConverter {
+    private static final double EPSILON = 1e-10;
 
     public static class Step {
         public final int index;
@@ -37,7 +38,7 @@ public class InfixToPostfixConverter {
             case '-' -> left - right;
             case '*' -> left * right;
             case '/' -> {
-                if (right == 0.0) {
+                if (Math.abs(right) < EPSILON) {
                     throw new IllegalArgumentException("Division by zero");
                 }
                 yield left / right;

@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 import java.util.List;
 
 public class InfixToPostfixApp extends Application {
+    private static final double EPSILON = 1e-10;
 
     private int stepIndex = 0;
     private List<InfixToPostfixConverter.Step> steps;
@@ -199,7 +200,7 @@ public class InfixToPostfixApp extends Application {
     }
 
     private String formatNumber(double value) {
-        if (value == Math.rint(value)) {
+        if (Math.abs(value - Math.rint(value)) < EPSILON) {
             return String.valueOf((long) value);
         }
         return String.valueOf(value);
