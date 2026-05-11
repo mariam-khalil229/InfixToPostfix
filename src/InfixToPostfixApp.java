@@ -201,7 +201,7 @@ public class InfixToPostfixApp extends Application {
 
     private String formatNumber(double value) {
         if (Math.abs(value - Math.rint(value)) < EPSILON) {
-            return String.valueOf((long) value);
+            return String.format("%.0f", value);
         }
         return String.valueOf(value);
     }

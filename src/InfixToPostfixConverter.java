@@ -159,7 +159,7 @@ public class InfixToPostfixConverter {
         }
 
         if (values.size() != 1) {
-            throw new IllegalArgumentException("Invalid postfix expression: leftover operands/operators");
+            throw new IllegalArgumentException("Invalid postfix expression: too many operands");
         }
         return values.pop();
     }
