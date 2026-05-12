@@ -133,7 +133,6 @@ class ExpressionSolver {
                     postfixOutput.add(String.valueOf(operatorStack.pop()));
                     logConversionState(operatorStack, postfixOutput, historyLogs, String.valueOf(currentChar));
                 }
-
                 operatorStack.push(currentChar);
                 logConversionState(operatorStack, postfixOutput, historyLogs, String.valueOf(currentChar));
             }
@@ -147,43 +146,7 @@ class ExpressionSolver {
         return postfixOutput;//array list ["12" ,"+" ,
     }
 
-    double calculatePostfix(ArrayList<String> postfixTokens, ArrayList<ActionLog> historyLogs) {
-        Stack<Double> evaluationStack = new Stack<>();
 
-        for (int i = 0; i < postfixTokens.size(); i++) {
-            String currentToken = postfixTokens.get(i);
-
-            if (isNumeric(currentToken)) {
-                evaluationStack.push(Double.parseDouble(currentToken));
-                logEvaluationState(evaluationStack, postfixTokens, historyLogs, currentToken);
-            }
-
-            else if (isMathSymbol(currentToken.charAt(0))) {
-                double rightOperand = evaluationStack.pop();
-                double leftOperand = evaluationStack.pop();
-
-                char activeOperator = currentToken.charAt(0);
-                double operationResult = 0;
-
-                if (activeOperator == '+') {
-                    operationResult = leftOperand + rightOperand;
-                } else if (activeOperator == '-') {
-                    operationResult = leftOperand - rightOperand;
-                } else if (activeOperator == '*') {
-                    operationResult = leftOperand * rightOperand;
-                } else if (activeOperator == '/') {
-                    operationResult = leftOperand / rightOperand;
-                } else if (activeOperator == '^') {
-                    operationResult = Math.pow(leftOperand, rightOperand);
-                }
-
-                evaluationStack.push(operationResult);
-                logEvaluationState(evaluationStack, postfixTokens, historyLogs, currentToken);
-            }
-        }
-
-        return evaluationStack.pop();
-    }
 
     void logConversionState(
             Stack<Character> currentStack,
