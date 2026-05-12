@@ -45,6 +45,32 @@ class ExpressionSolver {
         return new SolutionRecord(finalPostfixString, calculatedResult, historyLogs);
     }
 
+    boolean isNumeric(String strToken) {
+        try {
+            Double.parseDouble(strToken);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    boolean isMathSymbol(char symbol) {
+        return symbol == '+' || symbol == '-' || symbol == '*' || symbol == '/' || symbol == '^';
+    }
+
+    int getPriority(char symbol) {
+        if (symbol == '+' || symbol == '-') {
+            return 1;
+        }
+        if (symbol == '*' || symbol == '/') {
+            return 2;
+        }
+        if (symbol == '^') {
+            return 3; // Highest priority!
+        }
+        return 0;
+    }
+
     ArrayList<String> convertToPostfix(String infixString, ArrayList<ActionLog> historyLogs) {
         Stack<Character> operatorStack = new Stack<>();
         ArrayList<String> postfixOutput = new ArrayList<>();
@@ -73,7 +99,6 @@ class ExpressionSolver {
                     parsedOperand += infixString.charAt(i);
                     i++;
                 }
-
                 i--;
 
                 postfixOutput.add(parsedOperand);
@@ -209,33 +234,9 @@ class ExpressionSolver {
         return String.valueOf(value);
     }
 
-    boolean isNumeric(String strToken) {
-        try {
-            Double.parseDouble(strToken);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
 
-    boolean isMathSymbol(char symbol) {
-        return symbol == '+' || symbol == '-' || symbol == '*' || symbol == '/' || symbol == '^';
-    }
-
-    int getPriority(char symbol) {
-        if (symbol == '+' || symbol == '-') {
-            return 1;
-        }
-        if (symbol == '*' || symbol == '/') {
-            return 2;
-        }
-        if (symbol == '^') {
-            return 3; // Highest priority!
-        }
-        return 0;
-    }
 }
-
+//---------------------------GUI----------------------------------
 public class InfixApp extends Application {
 
     private TextField inputField;
