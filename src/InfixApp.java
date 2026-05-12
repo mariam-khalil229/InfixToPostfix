@@ -8,131 +8,6 @@ import javafx.stage.Stage;
 import java.util.ArrayList;
 import java.util.Stack;
 
-public class InfixApp extends Application {
-
-    private TextField inputField;
-    private Label phaseLabel, tokenLabel, outputLabel, evalLabel;
-    private ListView<String> stackView;
-
-    // Logic Variables
-    private ExpressionSolver logicSolver = new ExpressionSolver();
-    private SolutionRecord currentSolution = null;
-    private int currentStepIndex = -1;
-
-    @Override
-    public void start(Stage primaryStage) {
-        inputField = new TextField();
-        inputField.setPromptText("e.g. 10 / (2 + 3.5)");
-
-        Button buildBtn = new Button("Build / Reset");
-        Button prevBtn = new Button("Prev Step");
-        Button nextBtn = new Button("Next Step");
-
-        nextBtn.setStyle("-fx-base: #b3e5fc;");
-        prevBtn.setStyle("-fx-base: #ffecb3;");
-
-        HBox inputRow = new HBox(10, new Label("Infix:"), inputField, buildBtn, prevBtn, nextBtn);
-        inputRow.setAlignment(Pos.CENTER);
-
-        phaseLabel = new Label("Phase: Waiting...");
-        phaseLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-        tokenLabel = new Label("Current Token: -");
-        outputLabel = new Label("Output List: -");
-        evalLabel = new Label("Final Answer: -");
-
-        VBox statusBox = new VBox(8, phaseLabel, tokenLabel, outputLabel, evalLabel);
-        statusBox.setStyle("-fx-background-color: #f4f4f4; -fx-padding: 15; -fx-border-color: #ccc;");
-
-        stackView = createStyledListView();
-        VBox stackContainer = new VBox(5, new Label("Main Stack"), new Label("▼ TOP"), stackView, new Label("BOTTOM"));
-        stackContainer.setAlignment(Pos.CENTER);
-
-        VBox root = new VBox(20, inputRow, statusBox, stackContainer);
-        root.setPadding(new Insets(25));
-
-        // --- Button Actions ---
-        buildBtn.setOnAction(e -> calculateAllSteps(inputField.getText()));
-        nextBtn.setOnAction(e -> goNext());
-        prevBtn.setOnAction(e -> goPrev());
-
-        primaryStage.setTitle("Infix Visualizer (Renamed Variables)");
-        primaryStage.setScene(new Scene(root, 600, 600));
-        primaryStage.show();
-    }
-
-    private void calculateAllSteps(String rawInput) {
-        if (rawInput == null || rawInput.trim().isEmpty()) return;
-
-        try {
-            currentSolution = logicSolver.processExpression(rawInput);
-            currentStepIndex = -1;
-
-            phaseLabel.setText("Phase: Built successfully! Click Next.");
-            tokenLabel.setText("Current Token: -");
-            outputLabel.setText("Output List: -");
-            evalLabel.setText("Final Answer: -");
-            stackView.getItems().clear();
-
-        } catch (Exception ex) {
-            Alert alert = new Alert(Alert.AlertType.ERROR, ex.getMessage());
-            alert.showAndWait();
-        }
-    }
-
-    private void goNext() {
-        if (currentSolution == null || currentStepIndex >= currentSolution.processLogs.size() - 1) return;
-        currentStepIndex++;
-        updateUIFromLog(currentSolution.processLogs.get(currentStepIndex));
-    }
-
-    private void goPrev() {
-        if (currentSolution == null || currentStepIndex <= 0) {
-            if (currentStepIndex == 0) {
-                currentStepIndex--;
-                tokenLabel.setText("Current Token: -");
-                outputLabel.setText("Output List: -");
-                stackView.getItems().clear();
-            }
-            return;
-        }
-        currentStepIndex--;
-        updateUIFromLog(currentSolution.processLogs.get(currentStepIndex));
-    }
-
-    private void updateUIFromLog(ActionLog logData) {
-        phaseLabel.setText("Phase: " + logData.algorithmPhase);
-        tokenLabel.setText("Current Token: " + logData.activeToken);
-
-        outputLabel.setText("Output List: " + String.join(" ", logData.outputSnapshot));
-
-        stackView.getItems().clear();
-        for (int i = logData.stackSnapshot.size() - 1; i >= 0; i--) {
-            stackView.getItems().add(logData.stackSnapshot.get(i));
-        }
-
-        if (currentStepIndex == currentSolution.processLogs.size() - 1) {
-            evalLabel.setText("Final Answer: " + logicSolver.formatFinalNumber(currentSolution.finalComputedValue));
-        } else {
-            evalLabel.setText("Final Answer: -");
-        }
-    }
-
-    private ListView<String> createStyledListView() {
-        ListView<String> lv = new ListView<>();
-        lv.setPrefSize(160, 250);
-        lv.setCellFactory(param -> new ListCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) { setText(null); setStyle("-fx-background-color: transparent;"); }
-                else { setText(item); setAlignment(Pos.CENTER); setStyle("-fx-border-color: #333; -fx-background-color: white; -fx-padding: 5; -fx-font-weight: bold;"); }
-            }
-        });
-        return lv;
-    }
-
-    public static void main(String[] args) { launch(args); }
-}
-
 class ActionLog {//appears in gui
     String algorithmPhase;
     String activeToken;
@@ -355,8 +230,133 @@ class ExpressionSolver {
             return 2;
         }
         if (symbol == '^') {
-            return 3;
+            return 3; // Highest priority!
         }
         return 0;
     }
+}
+
+public class InfixApp extends Application {
+
+    private TextField inputField;
+    private Label phaseLabel, tokenLabel, outputLabel, evalLabel;
+    private ListView<String> stackView;
+
+    // Logic Variables
+    private ExpressionSolver logicSolver = new ExpressionSolver();
+    private SolutionRecord currentSolution = null;
+    private int currentStepIndex = -1;
+
+    @Override
+    public void start(Stage primaryStage) {
+        inputField = new TextField();
+        inputField.setPromptText("e.g. 10 / (2 + 3.5)");
+
+        Button buildBtn = new Button("Build / Reset");
+        Button prevBtn = new Button("Prev Step");
+        Button nextBtn = new Button("Next Step");
+
+        nextBtn.setStyle("-fx-base: #b3e5fc;");
+        prevBtn.setStyle("-fx-base: #ffecb3;");
+
+        HBox inputRow = new HBox(10, new Label("Infix:"), inputField, buildBtn, prevBtn, nextBtn);
+        inputRow.setAlignment(Pos.CENTER);
+
+        phaseLabel = new Label("Phase: Waiting...");
+        phaseLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        tokenLabel = new Label("Current Token: -");
+        outputLabel = new Label("Output List: -");
+        evalLabel = new Label("Final Answer: -");
+
+        VBox statusBox = new VBox(8, phaseLabel, tokenLabel, outputLabel, evalLabel);
+        statusBox.setStyle("-fx-background-color: #f4f4f4; -fx-padding: 15; -fx-border-color: #ccc;");
+
+        stackView = createStyledListView();
+        VBox stackContainer = new VBox(5, new Label("Main Stack"), new Label("▼ TOP"), stackView, new Label("BOTTOM"));
+        stackContainer.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(20, inputRow, statusBox, stackContainer);
+        root.setPadding(new Insets(25));
+
+        // --- Button Actions ---
+        buildBtn.setOnAction(e -> calculateAllSteps(inputField.getText()));
+        nextBtn.setOnAction(e -> goNext());
+        prevBtn.setOnAction(e -> goPrev());
+
+        primaryStage.setTitle("visualizer");
+        primaryStage.setScene(new Scene(root, 600, 600));
+        primaryStage.show();
+    }
+
+    private void calculateAllSteps(String rawInput) {
+        if (rawInput == null || rawInput.trim().isEmpty()) return;
+
+        try {
+            currentSolution = logicSolver.processExpression(rawInput);
+            currentStepIndex = -1;
+
+            phaseLabel.setText("Phase: Built successfully! Click Next.");
+            tokenLabel.setText("Current Token: -");
+            outputLabel.setText("Output List: -");
+            evalLabel.setText("Final Answer: -");
+            stackView.getItems().clear();
+
+        } catch (Exception ex) {
+            Alert alert = new Alert(Alert.AlertType.ERROR, ex.getMessage());
+            alert.showAndWait();
+        }
+    }
+
+    private void goNext() {
+        if (currentSolution == null || currentStepIndex >= currentSolution.processLogs.size() - 1) return;
+        currentStepIndex++;
+        updateUIFromLog(currentSolution.processLogs.get(currentStepIndex));
+    }
+
+    private void goPrev() {
+        if (currentSolution == null || currentStepIndex <= 0) {
+            if (currentStepIndex == 0) {
+                currentStepIndex--;
+                tokenLabel.setText("Current Token: -");
+                outputLabel.setText("Output List: -");
+                stackView.getItems().clear();
+            }
+            return;
+        }
+        currentStepIndex--;
+        updateUIFromLog(currentSolution.processLogs.get(currentStepIndex));
+    }
+
+    private void updateUIFromLog(ActionLog logData) {
+        phaseLabel.setText("Phase: " + logData.algorithmPhase);
+        tokenLabel.setText("Current Token: " + logData.activeToken);
+
+        outputLabel.setText("Output List: " + String.join(" ", logData.outputSnapshot));
+
+        stackView.getItems().clear();
+        for (int i = logData.stackSnapshot.size() - 1; i >= 0; i--) {
+            stackView.getItems().add(logData.stackSnapshot.get(i));
+        }
+
+        if (currentStepIndex == currentSolution.processLogs.size() - 1) {
+            evalLabel.setText("Final Answer: " + logicSolver.formatFinalNumber(currentSolution.finalComputedValue));
+        } else {
+            evalLabel.setText("Final Answer: -");
+        }
+    }
+
+    private ListView<String> createStyledListView() {
+        ListView<String> lv = new ListView<>();
+        lv.setPrefSize(160, 250);
+        lv.setCellFactory(param -> new ListCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) { setText(null); setStyle("-fx-background-color: transparent;"); }
+                else { setText(item); setAlignment(Pos.CENTER); setStyle("-fx-border-color: #333; -fx-background-color: white; -fx-padding: 5; -fx-font-weight: bold;"); }
+            }
+        });
+        return lv;
+    }
+
+    public static void main(String[] args) { launch(args); }
 }
