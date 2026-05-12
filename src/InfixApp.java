@@ -355,7 +355,7 @@ class ExpressionSolver {
             return 2;
         }
         if (symbol == '^') {
-            return 3; // Highest priority!
+            return 3;
         }
         return 0;
     }
