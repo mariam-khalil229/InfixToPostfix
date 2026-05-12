@@ -182,7 +182,47 @@ class ExpressionSolver {
         return evaluationStack.pop();
     }
 
+    void logConversionState(
+            Stack<Character> currentStack,
+            ArrayList<String> currentOutput,
+            ArrayList<ActionLog> historyLogs,
+            String activeToken
+    ) {
+        ArrayList<String> clonedStack = new ArrayList<>();
+        for (Character c : currentStack) {
+            clonedStack.add(String.valueOf(c));
+        }
 
+        ArrayList<String> clonedOutput = new ArrayList<>(currentOutput);
+
+        historyLogs.add(new ActionLog(
+                "Infix to Postfix Conversion",
+                activeToken,
+                clonedStack,
+                clonedOutput
+        ));
+    }
+
+    void logEvaluationState(
+            Stack<Double> currentStack,
+            ArrayList<String> postfixTokens,
+            ArrayList<ActionLog> historyLogs,
+            String activeToken
+    ) {
+        ArrayList<String> clonedStack = new ArrayList<>();
+        for (Double val : currentStack) {
+            clonedStack.add(formatFinalNumber(val));
+        }
+
+        ArrayList<String> clonedPostfix = new ArrayList<>(postfixTokens);
+
+        historyLogs.add(new ActionLog(
+                "Postfix Evaluation",
+                activeToken,
+                clonedStack,
+                clonedPostfix
+        ));
+    }
 
     String formatFinalNumber(double value) {
         if (value == (int) value) {
