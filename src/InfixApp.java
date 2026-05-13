@@ -33,6 +33,7 @@ class SolutionRecord {
         this.processLogs = logs;
     }
 }
+
 class ExpressionSolver {
 
     SolutionRecord processExpression(String infixExpression) {
@@ -59,15 +60,9 @@ class ExpressionSolver {
     }
 
     int getPriority(char symbol) {
-        if (symbol == '+' || symbol == '-') {
-            return 1;
-        }
-        if (symbol == '*' || symbol == '/') {
-            return 2;
-        }
-        if (symbol == '^') {
-            return 3; // Highest priority!
-        }
+        if (symbol == '+' || symbol == '-') return 1;
+        if (symbol == '*' || symbol == '/') return 2;
+        if (symbol == '^') return 3; // Highest priority
         return 0;
     }
 
@@ -78,22 +73,18 @@ class ExpressionSolver {
         for (int i = 0; i < infixString.length(); i++) {
             char currentChar = infixString.charAt(i);
 
-            if (currentChar == ' ') {
-                continue;
-            }
+            if (currentChar == ' ') continue;
 
             if (Character.isDigit(currentChar) || currentChar == '.') {
                 String parsedOperand = "";
                 int decimalPointCount = 0;
 
-                while (i < infixString.length() //bt loop 3la el raknm l7d ma tla2y space or symbol aw ay haga 8er digit aw .
+                while (i < infixString.length()
                         && (Character.isDigit(infixString.charAt(i)) || infixString.charAt(i) == '.')) {
 
                     if (infixString.charAt(i) == '.') {
                         decimalPointCount++;
-                        if (decimalPointCount > 1) {
-                            throw new RuntimeException("Invalid number format");
-                        }
+                        if (decimalPointCount > 1) throw new RuntimeException("Invalid number format: multiple decimal points");
                     }
 
                     parsedOperand += infixString.charAt(i);
@@ -112,15 +103,16 @@ class ExpressionSolver {
 
             else if (currentChar == ')') {
                 while (!operatorStack.isEmpty() && operatorStack.peek() != '(') {
-
-
                     postfixOutput.add(String.valueOf(operatorStack.pop()));
                     logConversionState(operatorStack, postfixOutput, historyLogs, String.valueOf(currentChar));
                 }
 
-                if (!operatorStack.isEmpty()) {// 3ashan n pop el (
-                    operatorStack.pop();
+
+                if (operatorStack.isEmpty()) {
+                    throw new RuntimeException("Mismatched brackets: Missing opening '('");
                 }
+
+                operatorStack.pop(); // pop '('
 
                 logConversionState(operatorStack, postfixOutput, historyLogs, String.valueOf(currentChar));
             }
@@ -128,22 +120,36 @@ class ExpressionSolver {
             else if (isMathSymbol(currentChar)) {
                 while (!operatorStack.isEmpty()
                         && operatorStack.peek() != '('
-                        && getPriority(operatorStack.peek()) >= getPriority(currentChar)) {
-
+                        && (
+                        getPriority(operatorStack.peek()) > getPriority(currentChar) ||
+                                (getPriority(operatorStack.peek()) == getPriority(currentChar) && currentChar != '^')
+                )
+                ) {
                     postfixOutput.add(String.valueOf(operatorStack.pop()));
                     logConversionState(operatorStack, postfixOutput, historyLogs, String.valueOf(currentChar));
                 }
+
                 operatorStack.push(currentChar);
                 logConversionState(operatorStack, postfixOutput, historyLogs, String.valueOf(currentChar));
             }
+            else {
+                throw new RuntimeException("Invalid character in expression: " + currentChar);
+            }
         }
 
+
         while (!operatorStack.isEmpty()) {
-            postfixOutput.add(String.valueOf(operatorStack.pop()));
+            char remainingOp = operatorStack.pop();
+
+            if (remainingOp == '(') {
+                throw new RuntimeException("Mismatched brackets: Missing closing ')'");
+            }
+
+            postfixOutput.add(String.valueOf(remainingOp));
             logConversionState(operatorStack, postfixOutput, historyLogs, "end");
         }
 
-        return postfixOutput;//array list ["12" ,"+" ,
+        return postfixOutput;
     }
 
     double calculatePostfix(ArrayList<String> postfixTokens, ArrayList<ActionLog> historyLogs) {
@@ -158,27 +164,35 @@ class ExpressionSolver {
             }
 
             else if (isMathSymbol(currentToken.charAt(0))) {
+                if (evaluationStack.size() < 2) {
+                    throw new RuntimeException("Invalid expression: Not enough operands for operator '" + currentToken + "'");
+                }
                 double rightOperand = evaluationStack.pop();
                 double leftOperand = evaluationStack.pop();
 
                 char activeOperator = currentToken.charAt(0);
                 double operationResult = 0;
 
-                if (activeOperator == '+') {
+                if (activeOperator == '+')
                     operationResult = leftOperand + rightOperand;
-                } else if (activeOperator == '-') {
+                else if (activeOperator == '-')
                     operationResult = leftOperand - rightOperand;
-                } else if (activeOperator == '*') {
+                else if (activeOperator == '*')
                     operationResult = leftOperand * rightOperand;
-                } else if (activeOperator == '/') {
+                else if (activeOperator == '/')
                     operationResult = leftOperand / rightOperand;
-                } else if (activeOperator == '^') {
+                else if (activeOperator == '^')
                     operationResult = Math.pow(leftOperand, rightOperand);
-                }
+
                 evaluationStack.push(operationResult);
                 logEvaluationState(evaluationStack, postfixTokens, historyLogs, currentToken);
             }
         }
+
+        if (evaluationStack.size() != 1) {
+            throw new RuntimeException("Invalid expression: Too many operands");
+        }
+
         return evaluationStack.pop();
     }
 
@@ -189,10 +203,7 @@ class ExpressionSolver {
             String activeToken
     ) {
         ArrayList<String> clonedStack = new ArrayList<>();
-        for (Character c : currentStack) {
-            clonedStack.add(String.valueOf(c));
-        }
-
+        for (Character c : currentStack) clonedStack.add(String.valueOf(c));
         ArrayList<String> clonedOutput = new ArrayList<>(currentOutput);
 
         historyLogs.add(new ActionLog(
@@ -210,10 +221,7 @@ class ExpressionSolver {
             String activeToken
     ) {
         ArrayList<String> clonedStack = new ArrayList<>();
-        for (Double val : currentStack) {
-            clonedStack.add(formatFinalNumber(val));
-        }
-
+        for (Double val : currentStack) clonedStack.add(formatFinalNumber(val));
         ArrayList<String> clonedPostfix = new ArrayList<>(postfixTokens);
 
         historyLogs.add(new ActionLog(
@@ -225,14 +233,11 @@ class ExpressionSolver {
     }
 
     String formatFinalNumber(double value) {
-        if (value == (int) value) {
-            return String.valueOf((int) value);
-        }
+        if (value == (int) value) return String.valueOf((int) value);
         return String.valueOf(value);
     }
-
-
 }
+
 //---------------------------GUI----------------------------------
 public class InfixApp extends Application {
 
@@ -248,16 +253,12 @@ public class InfixApp extends Application {
     @Override
     public void start(Stage primaryStage) {
         inputField = new TextField();
-        inputField.setPromptText("e.g. 10 / (2 + 3.5)");
 
-        Button buildBtn = new Button("Build / Reset");
-        Button prevBtn = new Button("Prev Step");
+        Button buildBtn = new Button("Build");
         Button nextBtn = new Button("Next Step");
-
         nextBtn.setStyle("-fx-base: #b3e5fc;");
-        prevBtn.setStyle("-fx-base: #ffecb3;");
 
-        HBox inputRow = new HBox(10, new Label("Infix:"), inputField, buildBtn, prevBtn, nextBtn);
+        HBox inputRow = new HBox(10, new Label("Infix:"), inputField, buildBtn, nextBtn);
         inputRow.setAlignment(Pos.CENTER);
 
         phaseLabel = new Label("Phase: Waiting...");
@@ -269,6 +270,9 @@ public class InfixApp extends Application {
         VBox statusBox = new VBox(8, phaseLabel, tokenLabel, outputLabel, evalLabel);
         statusBox.setStyle("-fx-background-color: #f4f4f4; -fx-padding: 15; -fx-border-color: #ccc;");
 
+
+
+
         stackView = createStyledListView();
         VBox stackContainer = new VBox(5, new Label("Main Stack"), new Label("▼ TOP"), stackView, new Label("BOTTOM"));
         stackContainer.setAlignment(Pos.CENTER);
@@ -276,18 +280,17 @@ public class InfixApp extends Application {
         VBox root = new VBox(20, inputRow, statusBox, stackContainer);
         root.setPadding(new Insets(25));
 
-        // --- Button Actions ---
         buildBtn.setOnAction(e -> calculateAllSteps(inputField.getText()));
         nextBtn.setOnAction(e -> goNext());
-        prevBtn.setOnAction(e -> goPrev());
 
-        primaryStage.setTitle("visualizer");
+        primaryStage.setTitle("Visualizer");
         primaryStage.setScene(new Scene(root, 600, 600));
         primaryStage.show();
     }
 
     private void calculateAllSteps(String rawInput) {
         if (rawInput == null || rawInput.trim().isEmpty()) return;
+
 
         try {
             currentSolution = logicSolver.processExpression(rawInput);
@@ -311,30 +314,23 @@ public class InfixApp extends Application {
         updateUIFromLog(currentSolution.processLogs.get(currentStepIndex));
     }
 
-    private void goPrev() {
-        if (currentSolution == null || currentStepIndex <= 0) {
-            if (currentStepIndex == 0) {
-                currentStepIndex--;
-                tokenLabel.setText("Current Token: -");
-                outputLabel.setText("Output List: -");
-                stackView.getItems().clear();
-            }
-            return;
-        }
-        currentStepIndex--;
-        updateUIFromLog(currentSolution.processLogs.get(currentStepIndex));
-    }
-
     private void updateUIFromLog(ActionLog logData) {
         phaseLabel.setText("Phase: " + logData.algorithmPhase);
         tokenLabel.setText("Current Token: " + logData.activeToken);
 
         outputLabel.setText("Output List: " + String.join(" ", logData.outputSnapshot));
-
-        stackView.getItems().clear();
-        for (int i = logData.stackSnapshot.size() - 1; i >= 0; i--) {
-            stackView.getItems().add(logData.stackSnapshot.get(i));
+        if(logData.stackSnapshot.isEmpty()) {
+            stackView.getItems().add("-");
         }
+        else{
+            stackView.getItems().clear();
+            for (int i = logData.stackSnapshot.size() - 1; i >= 0; i--) {
+                stackView.getItems().add(logData.stackSnapshot.get(i));
+            }
+        }
+
+
+
 
         if (currentStepIndex == currentSolution.processLogs.size() - 1) {
             evalLabel.setText("Final Answer: " + logicSolver.formatFinalNumber(currentSolution.finalComputedValue));
